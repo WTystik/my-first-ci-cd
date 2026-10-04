@@ -1,8 +1,7 @@
-simport hashlib
+import hashlib
 import ipaddress
 import subprocess
 import sys
-import nonexistent_module
 
 from flask import Flask, request
 from markupsafe import escape
@@ -31,11 +30,14 @@ def ping():
     except ValueError:
         return "Invalid IP address", 400
 
-    count_flag = "-n" if sys.platform == "win32" else "-c"
+    if sys.platform == "win32":
+        command = [r"C:\WINDOWS\system32\PING.EXE", "-n", "1", host]
+    else:
+        command = ["/usr/bin/ping", "-c", "1", host]
 
     try:
         result = subprocess.run(
-            ["ping", count_flag, "1", host],
+            command,
             shell=False,
             capture_output=True,
             check=False,
