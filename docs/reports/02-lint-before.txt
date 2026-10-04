@@ -1,0 +1,7 @@
+Recorded execution: 2026-09-22T12:13:12.917996+00:00
+Working directory: C:\Users\Roman\my-first-ci-cd
+Command: .\.venv\Scripts\python.exe -m flake8 . --count --statistics
+
+0
+
+Exit code: 0

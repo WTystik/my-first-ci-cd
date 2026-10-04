@@ -1,0 +1,78 @@
+Recorded execution: 2026-09-22T12:13:15.287151+00:00
+Working directory: C:\Users\Roman\my-first-ci-cd
+Command: .\.venv\Scripts\python.exe -m bandit -c pyproject.toml -r .
+
+Run started:2026-09-22 12:13:15.123349+00:00
+
+Test results:
+>> Issue: [B404:blacklist] Consider possible security implications associated with the subprocess module.
+   Severity: Low   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess
+   Location: .\app.py:2:0
+1	import hashlib
+2	import subprocess
+3	import sys
+
+--------------------------------------------------
+>> Issue: [B324:hashlib] Use of weak MD5 hash for security. Consider usedforsecurity=False
+   Severity: High   Confidence: High
+   CWE: CWE-327 (https://cwe.mitre.org/data/definitions/327.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b324_hashlib.html
+   Location: .\app.py:19:11
+18	    data = request.args.get("data", "")
+19	    return hashlib.md5(data.encode()).hexdigest()
+20	
+
+--------------------------------------------------
+>> Issue: [B602:subprocess_popen_with_shell_equals_true] subprocess call with shell=True identified, security issue.
+   Severity: High   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b602_subprocess_popen_with_shell_equals_true.html
+   Location: .\app.py:28:13
+27	        f"ping {count_flag} 1 {host}",
+28	        shell=True,
+29	        capture_output=True,
+30	        check=False,
+31	        timeout=5,
+32	    )
+33	    return f"<pre>{result.stdout.decode(errors='replace')}</pre>"
+34	
+35	
+
+--------------------------------------------------
+>> Issue: [B201:flask_debug_true] A Flask app appears to be run with debug=True, which exposes the Werkzeug debugger and allows the execution of arbitrary code.
+   Severity: High   Confidence: Medium
+   CWE: CWE-94 (https://cwe.mitre.org/data/definitions/94.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b201_flask_debug_true.html
+   Location: .\app.py:37:4
+36	if __name__ == "__main__":
+37	    app.run(host="127.0.0.1", debug=True)
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 27
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 1
+		Medium: 0
+		High: 3
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 1
+		High: 3
+Files skipped (0):
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	using config: pyproject.toml
+[main]	INFO	running on Python 3.12.14
+
+Exit code: 1

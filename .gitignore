@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+dist/
+*.sarif
+/bandit-results.json
+/trivy-results.json
+
+.lab-work/

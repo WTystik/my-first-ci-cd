@@ -1,0 +1,18 @@
+Recorded execution: 2026-09-22T12:13:11.817266+00:00
+Working directory: C:\Users\Roman\my-first-ci-cd
+Command: .\.venv\Scripts\python.exe -m pytest -v
+
+============================= test session starts =============================
+platform win32 -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Roman\my-first-ci-cd\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\Roman\my-first-ci-cd
+configfile: pyproject.toml
+testpaths: tests
+collecting ... collected 2 items
+
+tests/test_app.py::test_hello_world_returns_200 PASSED                   [ 50%]
+tests/test_app.py::test_checksum_endpoint_exists PASSED                  [100%]
+
+============================== 2 passed in 0.36s ==============================
+
+Exit code: 0

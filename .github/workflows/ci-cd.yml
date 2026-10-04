@@ -1,0 +1,140 @@
+name: CI/CD Pipeline with SAST and SCA
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  lint:
+    name: Lint (flake8)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install flake8
+        run: python -m pip install flake8
+
+      - name: Critical errors (blocking)
+        run: python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Style report (non-blocking)
+        run: python -m flake8 . --count --statistics --exit-zero
+
+  security-scan:
+    name: Security Scan (SAST + SCA)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Bandit
+        run: python -m pip install "bandit[toml]==1.9.4"
+
+      - name: Run Bandit (human-readable)
+        run: python -m bandit -c pyproject.toml -r . -f screen --exit-zero
+
+      - name: Run Bandit (JSON report)
+        run: python -m bandit -c pyproject.toml -r . -f json -o bandit-results.json --exit-zero
+
+      - name: Quality Gate - fail on HIGH severity
+        shell: bash
+        run: |
+          jq -e '(.results | type == "array") and (.errors | type == "array")' bandit-results.json > /dev/null
+          ERRORS=$(jq '.errors | length' bandit-results.json)
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::Bandit could not scan some files"
+            jq '.errors' bandit-results.json
+            exit 1
+          fi
+          COUNT=$(jq '[.results[] | select(.issue_severity == "HIGH")] | length' bandit-results.json)
+          echo "HIGH findings: $COUNT"
+          jq -r '.results[] | select(.issue_severity == "HIGH") | "\(.filename):\(.line_number) [\(.test_id)] severity=\(.issue_severity) confidence=\(.issue_confidence)"' bandit-results.json
+          if [ "$COUNT" -gt 0 ]; then
+            echo "::error::Bandit found $COUNT HIGH severity issues"
+            exit 1
+          fi
+
+      - name: Run Trivy (dependency scan)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          skip-dirs: .venv,venv,.git,dist
+
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bandit-report
+          path: bandit-results.json
+          if-no-files-found: error
+          retention-days: 14
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install test dependencies
+        run: python -m pip install "Flask==3.1.3" pytest
+
+      - name: Run pytest
+        run: python -m pytest -v
+
+  build:
+    name: Build Artifact
+    runs-on: ubuntu-latest
+    needs: [lint, security-scan, test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Create build artifact
+        run: |
+          mkdir -p dist
+          git archive --format=tar.gz --output=dist/app.tar.gz HEAD
+          tar -tzf dist/app.tar.gz
+
+      - name: Upload application artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: application-build
+          path: dist/app.tar.gz
+          if-no-files-found: error
+          retention-days: 14
