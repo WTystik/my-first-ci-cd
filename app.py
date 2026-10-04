@@ -1,5 +1,4 @@
-import nonexistent_module
-import hashlib
+simport hashlib
 import ipaddress
 import subprocess
 import sys
