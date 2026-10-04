@@ -2,6 +2,7 @@ simport hashlib
 import ipaddress
 import subprocess
 import sys
+import nonexistent_module
 
 from flask import Flask, request
 from markupsafe import escape
