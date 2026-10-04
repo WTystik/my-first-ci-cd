@@ -1,4 +1,5 @@
 import hashlib
+import nonexistent_module
 import ipaddress
 import subprocess
 import sys
@@ -50,4 +51,4 @@ def ping():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", debug=False)
+    app.run(host="127.0.0.1", debug=False)Ы
