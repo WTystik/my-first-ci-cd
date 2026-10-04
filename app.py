@@ -1,5 +1,4 @@
 import hashlib
-import nonexistent_module
 import ipaddress
 import subprocess
 import sys
